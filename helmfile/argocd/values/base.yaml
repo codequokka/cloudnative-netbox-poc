@@ -1,0 +1,29 @@
+---
+configs:
+  cm:
+    application.resourceTrackingMethod: annotation
+
+repoServer:
+  volumes:
+    - name: age
+      secret:
+        secretName: age
+  extraContainers:
+    - name: plugin
+      image: lucj/argocd-plugin-helmfile:v0.0.14
+      command: ["/var/run/argocd/argocd-cmp-server"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+      env:
+        - name: ENV_NAME
+          value: poc
+        - name: SOPS_AGE_KEY_FILE
+          value: /app/config/age/key.txt
+      volumeMounts:
+        - name: age
+          mountPath: /app/config/age/
+        - name: plugins
+          mountPath: /home/argocd/cmp-server/plugins
+        - name: var-files
+          mountPath: /var/run/argocd
