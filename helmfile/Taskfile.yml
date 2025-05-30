@@ -1,0 +1,39 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  CLUSTER_NAME: cloudnative-netbox-poc
+
+tasks:
+  setup-age-key:
+    cmds:
+      - age-keygen -o key.txt
+
+  setup-helm-plugin:
+    cmds:
+      - |
+        if ! helm plugin list | grep '^diff' > /dev/null; then
+          helm plugin install https://github.com/databus23/helm-diff
+        fi
+      - |
+        if ! helm plugin list | grep '^secrets' > /dev/null; then
+          helm plugin install https://github.com/jkroepke/helm-secrets
+        fi
+      - helm plugin list
+
+  setup-kubeconfig:
+    cmds:
+      - |
+        TMP_KUBECONFIG=$(mktemp)
+        kind get kubeconfig --name {{.CLUSTER_NAME}} > "$TMP_KUBECONFIG"
+        echo "export KUBECONFIG=$TMP_KUBECONFIG" > .kubeconfig.env
+        echo "KUBECONFIG exported to $TMP_KUBECONFIG. Run 'source .kubeconfig.env' to activate it."
+
+  deployment:diff:
+    cmds:
+      - helmfile diff --environment $HELM_ENVIRONMENT
+
+  deployment:apply:
+    cmds:
+      - helmfile apply --environment $HELM_ENVIRONMENT

@@ -1,0 +1,48 @@
+---
+environments:
+  poc: {}
+---
+repositories:
+  - name: argo
+    url: https://argoproj.github.io/argo-helm
+
+# apiVersions:
+#   - monitoring.coreos.com/v1
+
+releases:
+  - name: argocd
+    namespace: argocd
+    chart: argo/argo-cd
+    version: 7.7.15
+    values:
+      - values/base.yaml
+      - values/{{ .Environment.Name }}.yaml
+    hooks:
+      - events: ["presync"]
+        showlogs: true
+        command: /bin/bash
+        args:
+          - -ec
+          - |
+            # Create an age key if it does not exist
+            if [[ -f ../key.txt ]]; then
+              echo 'Use an existing age key'
+            else
+              echo 'Create an age key'
+              age-keygen > ./key.txt
+            fi
+
+            # Create a secret to give Argo access to the age key
+            kubectl create ns argocd
+            kubectl -n argocd create secret generic age --from-file=key.txt=../key.txt
+      - events: ["postuninstall"]
+        showlogs: true
+        command: "/bin/bash"
+        args:
+          - -ec
+          - |
+            # Remove secret created in the presync hook
+            kubectl -n argocd delete secret age
+
+            # Remove namespace
+            kubectl delete namespace argocd

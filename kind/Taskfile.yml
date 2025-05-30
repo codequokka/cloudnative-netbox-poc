@@ -1,0 +1,19 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  CLUSTER_NAME: cloudnative-netbox-poc
+
+tasks:
+  cluster:create:
+    cmds:
+      - kind create cluster --config config.yaml
+
+  cluster:status:
+    cmds:
+      - kubectl get nodes
+
+  cluster:delete:
+    cmds:
+      - kind delete cluster --name {{.CLUSTER_NAME}}
