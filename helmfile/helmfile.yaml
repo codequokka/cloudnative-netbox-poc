@@ -4,3 +4,4 @@ environments:
 
 helmfiles:
   - path: argocd/helmfile.yaml
+  - path: netbox/helmfile.yaml
